@@ -1,6 +1,6 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, send_from_directory, url_for, flash
 from flask_login import login_required, login_user
 from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
@@ -87,6 +87,28 @@ def login():
 @login_manager.user_loader
 def load_user(id):
     return db.session.execute(db.select(UserProfile).filter_by(id=id)).scalar()
+
+
+def get_uploaded_images():
+    rootdir = os.getcwd()
+    images = []
+    for subdir, dirs, files in os.walk(rootdir + '/uploads'):
+        for file in files:
+            images.append(file)
+
+    return images
+
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    
+    img = send_from_directory(os.path.join(os.getcwd(),app.config['UPLAOD_FOLDER'],filename))
+    return img
+    
+@app.route('/files')
+@login_required
+def files():
+    return render_template("files.html", files=get_uploaded_images())
+
 
 ###
 # The functions below should be applicable to all Flask apps.
