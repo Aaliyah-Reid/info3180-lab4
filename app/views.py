@@ -1,12 +1,12 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
-from flask_login import login_user, logout_user, current_user, login_required
-from werkzeug.utils import secure_filename
+from flask import render_template, request, redirect, url_for, flash
+from flask_login import login_required, login_user
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from app.models import UserProfile
 from app.forms import LoginForm
-
+from app.forms import UploadForm
 
 ###
 # Routing for your application.
@@ -25,18 +25,26 @@ def about():
 
 
 @app.route('/upload', methods=['POST', 'GET'])
+@login_required
 def upload():
     # Instantiate your form class
-    form = LoginForm()
+    form = UploadForm()
+    if request.method == 'POST':
 
-    # Validate file upload on submit
-    if form.validate_on_submit():
-        # Get file data and save to your uploads folder
+        # Validate file upload on submit
+        if form.validate_on_submit():
+            # Get file data and save to your uploads folder
+            photo = form.photo.data
+            filename = secure_filename(photo.filename)
 
-        flash('File Saved', 'success')
-        return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+            photo.save(os.path.join(
+                app.config['UPLOAD_FOLDER'], filename
+            ))
 
-    return render_template('upload.html')
+            flash('File Saved', 'success')
+            return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+
+    return render_template('upload.html',form=form)
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -57,15 +65,12 @@ def login():
         # passed to the login_user() method below. 
 
         user = db.session.execute(db.select(UserProfile).filter_by(username=username)).scalar()
-
+        print(password)
         if user is not None and check_password_hash(user.password, password):
-            remember_me = False
-
-            if 'remember_me' in request.form:
-                remember_me = True
-        
+           
             # Gets user id, load into session
             login_user(user)
+
 
             # Remember to flash a message to the user
             flash('Logged in successfully!', 'success')
@@ -73,7 +78,7 @@ def login():
         
         else:
             flash('Username or Password is incorrect.', 'danger')
-            
+
     flash_errors(form)
     return render_template("login.html", form=form)
 
