@@ -9,5 +9,5 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[InputRequired()])
 
 class UploadForm(FlaskForm):
-        photo = FileField('Image File', validators=[DataRequired(), FileAllowed(['jpg', 'png'], 'Images only!')])
+        photo = FileField('Image File', validators=[DataRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
 

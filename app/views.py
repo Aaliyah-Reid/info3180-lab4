@@ -1,7 +1,7 @@
 import os
 from app import app, db, login_manager
 from flask import render_template, request, redirect, send_from_directory, url_for, flash
-from flask_login import login_required, login_user
+from flask_login import login_required, login_user, logout_user
 from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
@@ -29,8 +29,8 @@ def about():
 def upload():
     # Instantiate your form class
     form = UploadForm()
-    if request.method == 'POST':
 
+    if request.method == 'POST':
         # Validate file upload on submit
         if form.validate_on_submit():
             # Get file data and save to your uploads folder
@@ -42,7 +42,7 @@ def upload():
             ))
 
             flash('File Saved', 'success')
-            return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+            return redirect(url_for('files')) # Update this to redirect the user to a route that displays all uploaded image files
 
     return render_template('upload.html',form=form)
 
@@ -82,6 +82,13 @@ def login():
     flash_errors(form)
     return render_template("login.html", form=form)
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('home'))
+
+
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
 @login_manager.user_loader
@@ -91,19 +98,24 @@ def load_user(id):
 
 def get_uploaded_images():
     rootdir = os.getcwd()
+    # uploads_dir = os.path.join(os.getcwd(), 'uploads')
     images = []
     for subdir, dirs, files in os.walk(rootdir + '/uploads'):
+    # for subdir, dirs, files in os.walk(uploads_dir):
         for file in files:
             images.append(file)
 
     return images
 
-@app.route('/uploads/<filename>')
+@app.route("/uploads/<filename>")
 def get_image(filename):
-    
-    img = send_from_directory(os.path.join(os.getcwd(),app.config['UPLAOD_FOLDER'],filename))
-    return img
-    
+    root_dir = os.getcwd()
+
+    return send_from_directory(os.path.join(root_dir, app.config['UPLOAD_FOLDER']), filename)
+
+
+
+
 @app.route('/files')
 @login_required
 def files():
